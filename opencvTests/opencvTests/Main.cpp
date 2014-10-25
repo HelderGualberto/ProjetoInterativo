@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 	}
     return 0;
 }*/
-
+/*
 Mat *myCapture(VideoCapture cap){
 	Mat *image;
 
@@ -163,7 +163,7 @@ int main(){
 }*/
 
 #include <vector>       // std::vector
-
+/*
 void plusRGB(Mat *image){
 
 	for( int y = 0; y < image->rows; y++ ){
@@ -193,7 +193,6 @@ int main(int argc, char** argv)
 	cap.set(CV_CAP_PROP_HUE,8); //HUE 8
 	cap.set(CV_CAP_PROP_SATURATION,93); //saturation 93
 	for(int i =0;i<256;i++){
-		
 		image = myCapture(cap);
 		imshow("",*image);
 		printf("%d\n",i);
@@ -243,10 +242,10 @@ int main(int argc, char** argv)
 	   cv::imshow("image original", lab_image);
 	   cv::imshow("image CLAHE", image_clahe);
 	   cv::waitKey(5);
-	}*/
+	}*//*
 	return 0;
 }
-
+*/
 double alpha; /**< Simple contrast control */
 int beta;  /**< Simple brightness control */
  /*
@@ -274,3 +273,76 @@ Mat image;
 return 0;
 }
 */
+int main(int argc, char *argv[])
+{
+    cv::Mat frame;                                              
+    cv::Mat fg;     
+    cv::Mat blurred;
+    cv::Mat thresholded;
+    cv::Mat gray;
+    cv::Mat blob;
+    cv::Mat bgmodel;                                            
+    cv::namedWindow("Frame");   
+    cv::namedWindow("Background Model");
+    cv::namedWindow("Blob");
+    cv::VideoCapture cap(0);    
+cv::BackgroundSubtractorMOG2 bgs;                           
+
+    bgs.nmixtures = 3;
+    bgs.history = 1000;
+    bgs.varThresholdGen = 15;
+    bgs.bShadowDetection = true;                            
+    bgs.nShadowDetection = 0;                               
+    bgs.fTau = 0.5;                                         
+
+std::vector<std::vector<cv::Point>> contours;               
+
+for(;;)
+{
+    cap >> frame;                                           
+
+    cv::GaussianBlur(frame,blurred,cv::Size(3,3),0,0,cv::BORDER_DEFAULT);
+
+    bgs.operator()(blurred,fg);                         
+    bgs.getBackgroundImage(bgmodel);                                
+
+    cv::erode(fg,fg,cv::Mat(),cv::Point(-1,-1),1);                         
+    cv::dilate(fg,fg,cv::Mat(),cv::Point(-1,-1),3);       
+
+    cv::threshold(fg,thresholded,70.0f,255,CV_THRESH_BINARY);
+
+    cv::findContours(thresholded,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
+    cv::cvtColor(thresholded,blob,CV_GRAY2RGB);
+    cv::drawContours(blob,contours,-1,cv::Scalar(255,255,255),CV_FILLED,8);
+
+    cv::cvtColor(frame,gray,CV_RGB2GRAY);
+    cv::equalizeHist(gray, gray);
+
+    int cmin = 20; 
+    int cmax = 1000;
+    std::vector<cv::Rect> rects;
+    std::vector<std::vector<cv::Point>>::iterator itc=contours.begin();
+    while (itc!=contours.end()) {   
+        if (itc->size() > cmin && itc->size() < cmax){ 
+
+                    std::vector<cv::Point> pts = *itc;
+                    cv::Mat pointsMatrix = cv::Mat(pts);
+                    cv::Scalar color( 0, 255, 0 );
+
+                    cv::Rect r0= cv::boundingRect(pointsMatrix);
+                    cv::rectangle(frame,r0,color,2);                    
+
+                    //DETECT THE DIRECTION OF MOVING OBJECTS HERE!
+
+                    ++itc;}
+         else{++itc;}
+    }
+
+    cv::imshow("Frame",frame);
+    cv::imshow("Background Model",bgmodel);
+    cv::imshow("Blob",blob);
+    if(cv::waitKey(30) >= 0) break;
+}
+    return 0;
+}
+	
