@@ -1,9 +1,13 @@
 #include <opencv2\opencv.hpp>
 #include <process.h>
 #include <vector> 
+#include <iostream>
+#include <windows.h>
 
 using namespace cv;
 using namespace std;
+
+#pragma region testes malditos
 /*
 Mat getImagePart(Mat cameraFeed,Rect rect){
 
@@ -398,6 +402,7 @@ int main(){
 	return 0;
 }*/
 
+/*
 #include <stdio.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/contrib/contrib.hpp>
@@ -451,27 +456,27 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 }
 
 int chekingGender(float height, float width) {
-    
+    int x = 0;
     // Check for valid command line arguments, print usage
     // if no arguments were given.
     
     string output_folder = ".";
     
     // Get the path to your CSV.
-    string fn_csv = string("C:\\opencv\\imagefaces\\people.csv");
+    string fn_csv = string("C:\\opencv\\people.csv");
     string fn_haar = string("C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt_tree.xml");
     // These vectors hold the images and coresponding labels.
     vector<Mat> images;
     vector<int> labels;
     // Read in the data. This can fail if no valid
     // input filename is given.
-    //try {
+    try {
         read_csv(fn_csv, images, labels);
-   /* } catch (cv::Exception& e) {
+    } catch (cv::Exception& e) {
         cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
         // nothing more we can do
         exit(1);
-    }*/
+    }
 	
     int im_width = images[0].cols;
     int im_height = images[0].rows;
@@ -537,6 +542,9 @@ int chekingGender(float height, float width) {
     cap >> frame;
     cap.set(CV_CAP_PROP_FRAME_WIDTH, (frame.cols/2));
     cap.set(CV_CAP_PROP_FRAME_HEIGHT, (frame.rows/2));
+	cap.set(CV_CAP_PROP_HUE,8); //HUE 8
+	cap.set(CV_CAP_PROP_SATURATION,93); //saturation 93
+
     //cap.set(CV_CAP_PROP_FRAME_WIDTH, (width));
     //cap.set(CV_CAP_PROP_FRAME_HEIGHT, (height));
     //printf("width %f, height %f", width, height);
@@ -547,6 +555,10 @@ int chekingGender(float height, float width) {
     }
     // Holds the current frame from the Video device:
     for(;;) {
+		x++;
+		stringstream ss ;
+		ss << "C:\\opencv\\helder\\helder" <<x<< ".png";
+		string s = ss.str();
         cap >> frame;
         Mat original = frame.clone();
         Mat gray;
@@ -558,21 +570,27 @@ int chekingGender(float height, float width) {
             // Process face by face:
             Rect face_i = faces[i];
             // Crop the face from the image. So simple with OpenCV C++:
+			
             Mat face = gray(face_i);
-                       Mat face_resized;
+			Mat rgb = original(face_i);
+			resize(rgb,rgb,Size(200,200));
+
+			imwrite(s,rgb);
+            Mat face_resized;
             cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
-            // Now perform the prediction, see how easy that is:
+			
+			// Now perform the prediction, see how easy that is:
             int prediction = model->predict(face_resized);
             // And finally write all we've found out to the original image!
             rectangle(original, face_i, CV_RGB(0, 255,0), 1);
             string box_text;
-            if(prediction ==HOMEM){
-                box_text = format("man");
-            }
-			else if(prediction == MULHER)
-            box_text = format("woman");
+			printf("%d ",prediction);
+            if(prediction == MULHER){
+                box_text = format("Prd - 0");
+			}
 			else
-				box_text = format("Prediction = 2");
+				box_text = format("Prd - 1");
+		
 
             // Calculate the position for annotated text (make sure we don't
             // put illegal values in there):
@@ -594,20 +612,50 @@ int chekingGender(float height, float width) {
     return 0;
 }
 
+*/
+#pragma endregion
+
+	typedef struct dataStruct {
+    int ID;
+    int returnValue;
+	};
+
+
+
+void teste(void* param){
+	
+	dataStruct *thread = (dataStruct*)param;
+	Sleep(500);
+	thread->ID = 500;
+	thread->returnValue = 50;
+
+	
+	printf("ID: %d\nReturned: %d\n",thread->ID,thread->returnValue);
+}
+
+void teste2(void* param){
+	
+	dataStruct *thread = (dataStruct*)param;
+	Sleep(100);
+	thread->ID = 100;
+	thread->returnValue = 10;
+
+	
+	printf("ID: %d\nReturned: %d\n",thread->ID,thread->returnValue);
+}
 
 int main(){
-	chekingGender(768,1366);
-	/*VideoCapture cap(0);
-	Mat image;
-	for(int  i = 0;;i+=10){
-		cap.set(CV_CAP_PROP_FRAME_HEIGHT,i);
-		cap.set(CV_CAP_PROP_FRAME_WIDTH,i);
-		cap.read(image);
-		
-		printf("height: %d\nwidth: %d\n",image.rows,image.cols);
-		imshow("",image);
-		waitKey(5);
+	
+	
+	dataStruct thread_1,data2;
+
+	_beginthread( teste, 0, (void*)&thread_1 );
+	_beginthread( teste2, 0, (void*)&thread_1 );
+
+
+	for(;;){
 	}
-	*/
+	
 	return 0;
 }
+
