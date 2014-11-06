@@ -3,14 +3,17 @@
 #include <fstream>
 #include <sstream>
 #include <stdio.h>
-
-
+#include <process.h>
+#include <Windows.h>
+#include <Time.h>
+#include "Data.h"
+#include <stdlib.h>
 
 using namespace cv;
 using namespace std;
 
 int im_width,im_height;
-int intrestingPeople = 0;
+int intrestedPeople = 0;
 int numberOfPeople = 0;
 
 //Define the standard window size
@@ -20,6 +23,22 @@ const static int SENSITIVITY_VALUE = 20;
 //size of blur used to smooth the intensity image output from absdiff() function
 const static int BLUR_SIZE = 10;
 
+typedef struct thread{
+	bool timeWaited;
+	int timeToWait;
+	float totalTime;
+	int workingTime;
+	VideoCapture* cap;
+	int endProgram;
+};
+
+void initThreadTime(thread* waitTime){
+	waitTime->workingTime = 0;
+	waitTime->timeToWait = 4000;
+	waitTime->timeWaited = true;
+	waitTime->totalTime = 0;
+	waitTime->endProgram = 0;
+}
 
 typedef enum{
     MULHER,
@@ -142,12 +161,11 @@ vector<vector<Point>> getContours(Mat image,int* x){
 					contourArea = cv::contourArea(contours[i]);
 					*x = i;
 				}
-				drawContours( image, contours, i,Scalar(127,127,127), 1.5, 1, hierarchy, CV_16SC1, Point() );
+				drawContours( image, contours, i,Scalar(127,127,127), 1.5, 1.0, hierarchy, CV_16SC1, Point() );
 			}
 		}
 		return contours;
 }
-
 
 void initCapture(VideoCapture* capture){
 	capture->open(0);
@@ -271,14 +289,11 @@ Ptr<FaceRecognizer> chekingGender(CascadeClassifier* haar_cascade) {
 	return model;
 }
 
-
-
-
-int main(){
+void peopleCounting(void* arg){
 	
-	// These pragmas is used to create a code block. It helps us to hide the code
 	#pragma region init local objects
-		VideoCapture capture;
+		thread *t = (thread*)arg;
+		VideoCapture *cap = t->cap;
 		Mat cameraFeed;
 		Mat leftSkinMat;
 		Mat rightSkinMat;
@@ -296,39 +311,30 @@ int main(){
 		Rect rightR;
 		Rect window;
 		Rect partRect;
-		CascadeClassifier haar_cascade;
-		Ptr<FaceRecognizer> model = chekingGender(&haar_cascade);
 	#pragma endregion
+
 	#pragma region init local variables
 		bool lFlag = false;
 		bool rFlag = false;
-		bool flag = false;
 		int lTemp = 0;
 		int rTemp = 0;
 		int lX = 0;
 		int lDx = 0;
 		int rX = 0; 
 		int rDx = 0;
-		int teste = 0;
-		int temp = 0;
 	#pragma endregion 
-
 	//Init Kalman filter configurations
 	initFunctions(KF);
-	// init camera capture configuration
-	initCapture(&capture);
+
 	// init rect sizes
 	initRectSize(0,0,windowWidth,windowHeight,&window); //Used to search the skins in the window.
 	initRectSize(0,0,50,windowHeight,&leftR);//Used to detect people in the left of the window.
 	initRectSize(windowWidth - 50,0,50,windowHeight,&rightR);//Used to detect people in the left of the window.
 
+	while(!t->endProgram){
 
-
-	for(;;) {
-	
 		//initialize the camera
-		capture.read(cameraFeed);
-
+		cap->read(cameraFeed);
 		//Get the sides frames 
 		leftFrame = getImagePart(cameraFeed,leftR);
 		rightFrame = getImagePart(cameraFeed,rightR);
@@ -351,8 +357,6 @@ int main(){
 		rDx = 0;
 
 
-		//printf("%d",j);
-
 		if(j < 0)
 			lTemp = 0;
 		if(k < 0)
@@ -363,7 +367,6 @@ int main(){
 			lmu = moments( leftContours[j], false );
 			lmc = Point2f( lmu.m10/lmu.m00 , lmu.m01/lmu.m00 ); 
 			leftDirection[lTemp] = Point2f( lmu.m10/lmu.m00 , lmu.m01/lmu.m00 );
-			//drawCross(cameraFeed, mc, Scalar(255, 0, 0), 5);
 			lTemp++;
 		}
 
@@ -371,7 +374,6 @@ int main(){
 			rmu = moments(rightContours[k],false);
 			rmc = Point2f( rmu.m10/rmu.m00 , rmu.m01/rmu.m00 ); 
 			rightDirection[rTemp] = Point2f( rmu.m10/rmu.m00 , rmu.m01/rmu.m00 );
-			//drawCross(cameraFeed, mc, Scalar(255, 0, 0), 5);
 			rTemp++;
 		}
  
@@ -389,20 +391,18 @@ int main(){
 			}
 		}
 
-		//printf("ldx: %d jrdx: %d\n",lDx,rDx);
-
 		if(lmc.inside(window) && lFlag == false){
 			if(lDx < 0){
 				numberOfPeople++;
 				lFlag = true;
-				printf("Total :%d\nIntresting: %d\n ",numberOfPeople,intrestingPeople);
+				printf("Total :%d\n",numberOfPeople);
 			}
 		}
 		if(rmc.inside(window) && rFlag == false){
 			if(rDx > 0){
 				numberOfPeople++;
 				rFlag = true;
-				printf("Total :%d\nIntresting: %d\n ",numberOfPeople,intrestingPeople);
+				printf("Total :%d\n",numberOfPeople);
 
 			}
 		}
@@ -412,6 +412,89 @@ int main(){
 		if(!rmc.inside(window))
 			rFlag = false;
 
+	//	imshow("right",rightSkinMat);
+	//	imshow("left",leftSkinMat);
+	}
+}
+
+void delay(void* arg){
+	
+	thread *waitTime = (thread*)arg;
+	Sleep(waitTime->timeToWait);
+	waitTime->timeWaited = true;
+}
+
+const std::string currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+    return buf;
+}
+
+void clock(void* arg){
+	thread* clock = (thread*)arg;
+	
+	while(!clock->endProgram){
+		clock->workingTime+=1;
+		Sleep(1000);
+	}
+}
+
+void exitProgram(void* arg){
+	Sleep(200);
+	thread *endP = (thread*)arg;
+	string s;
+	cout << "To exit the program type 'exit'." << endl;
+	
+	do{
+		cin >> s;
+		if(s != "exit")
+			cout << "ERRO! It is not an existent command!" << endl;
+
+	}while(s != "exit");
+
+	endP->endProgram = 1;
+}
+
+int startProgram(){
+	
+	// These pragmas is used to create a code block. It helps us to hide the code
+	VideoCapture capture;
+	Mat cameraFeed;
+	thread Wtime;	
+	CascadeClassifier haar_cascade;
+	Ptr<FaceRecognizer> model = chekingGender(&haar_cascade);
+	Data* appData = new Data();
+	
+	bool flag = false;
+	int teste = 0;
+	int temp = 0;
+	double sec = 0;
+	int counter=0;
+	time_t start,end;
+
+	// init camera capture configuration
+	initCapture(&capture);
+	initThreadTime(&Wtime);
+	Wtime.cap = &capture;
+
+	_beginthread(clock,0,(void*)&Wtime);
+	_beginthread(peopleCounting,0,(void*)&Wtime);
+	_beginthread(exitProgram,0,(void*)&Wtime);
+
+	appData->startTime = currentDateTime();
+	
+	cout << "The program is already working." << endl;
+
+	while(1) {
+
+		if(Wtime.endProgram)
+			break;
+
+		time(&start);
+		capture.read(cameraFeed);
 
         Mat original = cameraFeed.clone();
 
@@ -427,57 +510,45 @@ int main(){
 		if(faces.size() == 0 || temp-teste != 0)
 			flag = true;
 
-	#pragma region for faces < i
 		for(int i = 0; i < faces.size(); i++) {
-			if(flag == true){
+
+			if(flag == true && Wtime.timeWaited){		
+				Wtime.timeWaited = false;
 				teste = faces.size();
-				intrestingPeople += teste;
-				//printf("%d ",teste);
+				intrestedPeople++;
+				_beginthread(delay,0,(void*)&Wtime);
+				printf("Intrested: %d\n",intrestedPeople);
 			}
 			flag = false;
-			// Process face by face:
-            Rect face_i = faces[i];
-            // Crop the face from the image. So simple with OpenCV C++:
-			
-            Mat face = gray(face_i);
-			
-            Mat face_resized;
-            cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
-			
-			// Now perform the prediction, see how easy that is:
-            int prediction = model->predict(face_resized);
-            // And finally write all we've found out to the original image!
-            rectangle(original, face_i, CV_RGB(0, 255,0), 1);
-            string box_text;
-			
-            if(prediction == MULHER){
-                box_text = format("Prd - 0");
-			}
-			else
-				box_text = format("Prd - 1");
-		
-
-            // Calculate the position for annotated text (make sure we don't
-            // put illegal values in there):
-            int pos_x = std::max(face_i.tl().x - 10, 0);
-            int pos_y = std::max(face_i.tl().y - 10, 0);
-            // And now put it into the image:
-            putText(original, box_text, Point(pos_x, pos_y), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(255,255,255), 2.0);
         }
-	#pragma endregion
+		if(faces.size() != 0){
+			Wtime.totalTime +=sec;
+		}
 
-		
-		
-	
-        // Show the result:
-		/*
-        imshow("People Monitoring", original);
-        imshow("right",rightSkinMat);
-		imshow("left",leftSkinMat);
-		*/
-        // And display it:
-        waitKey(1);
-    }
+		time(&end);
+		sec = difftime(end,start);	
+	}
+
+	Sleep(500);
+
+	appData->endTime = currentDateTime();
+	appData->intrestedPeople = intrestedPeople;
+	appData->numberOfPeople = numberOfPeople;
+	appData->observedTime = Wtime.totalTime;
+	appData->livedTime += Wtime.workingTime;
+	appData->SaveData();
+
+	return 1;
+}
+
+int main(){
+	int status;
+
+	cout << "Initializing..." << endl; 
+	status = startProgram();
+
+	if(status)
+		cout <<"Program finished!"<< endl;
 
 	return 0;
 }

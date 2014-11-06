@@ -1,0 +1,29 @@
+			
+			// Process face by face:
+            Rect face_i = faces[i];
+            // Crop the face from the image. So simple with OpenCV C++:
+			
+            Mat face = gray(face_i);
+			
+            Mat face_resized;
+            cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
+			
+			// Now perform the prediction, see how easy that is:
+            int prediction = model->predict(face_resized);
+            // And finally write all we've found out to the original image!
+            rectangle(original, face_i, CV_RGB(0, 255,0), 1);
+            string box_text;
+			
+            if(prediction == MULHER){
+                box_text = format("Prd - 0");
+			}
+			else
+				box_text = format("Prd - 1");
+		
+
+            // Calculate the position for annotated text (make sure we don't
+            /// put illegal values in there):
+            int pos_x = max(face_i.tl().x - 10, 0);
+            int pos_y = max(face_i.tl().y - 10, 0);
+            // And now put it into the image:
+            putText(original, box_text, Point(pos_x, pos_y), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(255,255,255), 2.0);

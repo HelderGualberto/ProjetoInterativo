@@ -3,6 +3,7 @@
 #include <vector> 
 #include <iostream>
 #include <windows.h>
+#include <Time.h>
 
 using namespace cv;
 using namespace std;
@@ -620,7 +621,7 @@ int chekingGender(float height, float width) {
     int returnValue;
 	};
 
-
+/*
 
 void teste(void* param){
 	
@@ -644,18 +645,53 @@ void teste2(void* param){
 	printf("ID: %d\nReturned: %d\n",thread->ID,thread->returnValue);
 }
 
+void teste3(void* arg){
+	VideoCapture* cap = (VideoCapture*)arg;
+	Mat cameraFeed;
+	
+	for(;;){
+		cap->read(cameraFeed);
+		imshow("With thread",cameraFeed);
+		waitKey(10);
+	}
+
+}
 int main(){
 	
-	
+	VideoCapture cap(0);
+
 	dataStruct thread_1,data2;
 
-	_beginthread( teste, 0, (void*)&thread_1 );
-	_beginthread( teste2, 0, (void*)&thread_1 );
+	//_beginthread( teste, 0, (void*)&thread_1 );
+	//_beginthread( teste2, 0, (void*)&thread_1 );
+	_beginthread(teste3,0,(void*)&cap);
 
-
+	Mat cameraFeed,c;
 	for(;;){
+		cap.read(cameraFeed);
+		//cap.read(c);
+		imshow("Without thread",cameraFeed);
+		//imshow("Without",c);
+
+		waitKey(10);
 	}
 	
 	return 0;
 }
 
+*/
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <stdlib.h>
+
+int main(int argc, char** argv)
+{
+	FILE * input;
+	input = fopen("C:\\Users\\Helder\\Documents\\GitHub\\ProjetoInterativo\\peopleMonitoring\\time.txt","w");
+
+
+	fprintf(input,"inicio do arquivo\n");
+
+  return 0;
+}
