@@ -616,11 +616,6 @@ int chekingGender(float height, float width) {
 */
 #pragma endregion
 
-	typedef struct dataStruct {
-    int ID;
-    int returnValue;
-	};
-
 /*
 
 void teste(void* param){
@@ -685,13 +680,48 @@ int main(){
 #include <sstream>
 #include <stdlib.h>
 
-int main(int argc, char** argv)
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/resultset.h>
+#include <cppconn/statement.h>
+
+
+using namespace std;
+
+int main(void)
 {
-	FILE * input;
-	input = fopen("C:\\Users\\Helder\\Documents\\GitHub\\ProjetoInterativo\\peopleMonitoring\\time.txt","w");
 
+try {
+  sql::Driver *driver;
+  sql::Connection *con;
+  sql::Statement *stmt;
+  sql::ResultSet *res;
 
-	fprintf(input,"inicio do arquivo\n");
+  /* Create a connection */
+  driver = get_driver_instance();
+  con = driver->connect("54.207.112.185", "root", "rcsa9309");
+  /* Connect to the MySQL test database */
+  con->setSchema("test");
 
-  return 0;
+  stmt = con->createStatement();
+  res = stmt->executeQuery("SELECT 'Hello World!' AS _message");
+  while (res->next()) {
+    cout << "\t... MySQL replies: ";
+    /* Access column data by alias or column name */
+    cout << res->getString("_message") << endl;
+    cout << "\t... MySQL says it again: ";
+    /* Access column fata by numeric offset, 1 is the first column */
+    cout << res->getString(1) << endl;
+  }
+  delete res;
+  delete stmt;
+  delete con;
+
+} catch (sql::SQLException &e) {
+	cout << "deu merda" << endl;
+}
+
+cout << endl;
+
+return EXIT_SUCCESS;
 }
