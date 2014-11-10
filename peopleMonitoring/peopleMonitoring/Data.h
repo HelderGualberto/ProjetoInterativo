@@ -14,5 +14,6 @@ public:
 	float observedTime; // tempo dentro do intervalo de uma hora em que as pessoas interessadas ficaram olhando a vitrine	
 	int numberOfPeople;//Numero total de pessas que passaram em uma hora
 	int intrestedPeople;//Numero de pessoas interassadas no intervalo de uma hora
+	int Women,Men;// Numero de mulhers e homens que se interessaram.
 
 };

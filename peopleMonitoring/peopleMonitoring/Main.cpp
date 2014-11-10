@@ -12,9 +12,12 @@
 using namespace cv;
 using namespace std;
 
+int timeToSave = 15; // Tempo para salvar os dados no banco de dados. Em segundos
 int im_width,im_height;
-int intrestedPeople = 0;
 int numberOfPeople = 0;
+int women = 0;
+int men = 0;
+
 
 //Define the standard window size
 const static int windowHeight = 288, windowWidth = 352;
@@ -512,12 +515,43 @@ int startProgram(){
 
 		for(int i = 0; i < faces.size(); i++) {
 
-			if(flag == true && Wtime.timeWaited){		
+			Rect face_i = faces[i];
+			Mat face = gray(face_i);
+			Mat face_resized;
+			cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
+            int prediction = model->predict(face_resized);
+
+			// Now perform the prediction, see how easy that is:
+            // And finally write all we've found out to the original image!
+            rectangle(original, face_i, CV_RGB(0, 255,0), 1);
+           
+			string box_text;
+
+            if(prediction == MULHER){
+                box_text = format("Prd - 0");
+			}
+			else
+				box_text = format("Prd - 1");
+		
+
+            // Calculate the position for annotated text (make sure we don't
+            // put illegal values in there):
+            int pos_x = max(face_i.tl().x - 10, 0);
+            int pos_y = max(face_i.tl().y - 10, 0);
+            // And now put it into the image:
+            putText(original, box_text, Point(pos_x, pos_y), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(255,255,255), 2.0);
+
+			if(flag == true && (Wtime.timeWaited || temp-teste != 0)){		
 				Wtime.timeWaited = false;
 				teste = faces.size();
-				intrestedPeople++;
+				
+				if(prediction == 0)
+					women++;
+				else
+					men++;
+
 				_beginthread(delay,0,(void*)&Wtime);
-				printf("Intrested: %d\n",intrestedPeople);
+				printf("Intrested: %d\n",women+men);
 			}
 			flag = false;
         }
@@ -527,16 +561,40 @@ int startProgram(){
 
 		time(&end);
 		sec = difftime(end,start);	
+
+
+		imshow("",original);
+		waitKey(5);
+
+		if(Wtime.workingTime%timeToSave== 0){
+
+		#pragma region Save data
+			Sleep(500);
+			appData->endTime = currentDateTime();
+			appData->intrestedPeople = women + men;
+			appData->numberOfPeople = numberOfPeople;
+			appData->observedTime = Wtime.totalTime;
+			appData->livedTime += Wtime.workingTime;
+			appData->Women = women;
+			appData->Men = men;
+			appData->SaveData();
+		#pragma endregion;
+
+		}
+
 	}
 
-	Sleep(500);
-
-	appData->endTime = currentDateTime();
-	appData->intrestedPeople = intrestedPeople;
-	appData->numberOfPeople = numberOfPeople;
-	appData->observedTime = Wtime.totalTime;
-	appData->livedTime += Wtime.workingTime;
-	appData->SaveData();
+	#pragma region Save data
+		Sleep(500);
+		appData->endTime = currentDateTime();
+		appData->intrestedPeople = women + men;
+		appData->numberOfPeople = numberOfPeople;
+		appData->observedTime = Wtime.totalTime;
+		appData->livedTime += Wtime.workingTime;
+		appData->Women = women;
+		appData->Men = men;
+		appData->SaveData();
+	#pragma endregion;
 
 	return 1;
 }

@@ -4,6 +4,9 @@
 #include <iostream>
 #include <windows.h>
 #include <Time.h>
+#include <fstream>
+#include <sstream>
+#include <stdlib.h>
 
 using namespace cv;
 using namespace std;
@@ -675,53 +678,63 @@ int main(){
 }
 
 */
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <stdlib.h>
 
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/resultset.h>
-#include <cppconn/statement.h>
 
+#include <mysql.h>
 
 using namespace std;
 
-int main(void)
+int main(int argc, char **argv)
 {
+  MYSQL *con = mysql_init(NULL);
 
-try {
-  sql::Driver *driver;
-  sql::Connection *con;
-  sql::Statement *stmt;
-  sql::ResultSet *res;
+ //FILE * input = fopen("C:\\Users\\Helder\\Documents\\GitHub\\ProjetoInterativo\\peopleMonitoring\\appData.txt","r");
 
-  /* Create a connection */
-  driver = get_driver_instance();
-  con = driver->connect("54.207.112.185", "root", "rcsa9309");
-  /* Connect to the MySQL test database */
-  con->setSchema("test");
+ // int numberOfPeople,intrestedPeople;
+ // float time;
+ // char startTime[20],endTime[20];
+/*
+  fscanf(input,"%s",startTime);
+  getc(input);
+  fscanf(input,"%d",&numberOfPeople);
+  fscanf(input,"%d",&intrestedPeople);
+  fscanf(input,"%f",&time);
+  fscanf(input,"%s",endTime);
+  getc(input);
 
-  stmt = con->createStatement();
-  res = stmt->executeQuery("SELECT 'Hello World!' AS _message");
-  while (res->next()) {
-    cout << "\t... MySQL replies: ";
-    /* Access column data by alias or column name */
-    cout << res->getString("_message") << endl;
-    cout << "\t... MySQL says it again: ";
-    /* Access column fata by numeric offset, 1 is the first column */
-    cout << res->getString(1) << endl;
+  fclose(input);
+
+  printf("Intrested: %d\n",intrestedPeople);
+  printf("total: %d\n",numberOfPeople);
+  printf("time: %f\n",time);
+  printf("start: %s\n",startTime);
+  printf("end: %s\n",endTime);
+  */
+  if (con == NULL)
+  {
+    fprintf(stderr, "%s\n", mysql_error(con));
+    exit(1);
   }
-  delete res;
-  delete stmt;
-  delete con;
+//172.246.16.27
+//root
+//8963
+  if (mysql_real_connect(con, "172.246.16.27", "root", "8963",
+    "pi_helder_joao", 0, NULL, 0) == NULL)
+  {
+    fprintf(stderr, "%s\n", mysql_error(con));
+    mysql_close(con);
+    exit(1);
+  }
 
-} catch (sql::SQLException &e) {
-	cout << "deu merda" << endl;
-}
+  if (mysql_query(con, "INSERT INTO PeopleData (TotalPeople,IntrestedPeople,Woman,Men) VALUES('20', '11','5','6')"))
+  {
+      fprintf(stderr, "%s\n", mysql_error(con));
+      mysql_close(con);
+      exit(1);
+  }
 
-cout << endl;
 
-return EXIT_SUCCESS;
+  mysql_close(con);
+
+  exit(0);
 }
