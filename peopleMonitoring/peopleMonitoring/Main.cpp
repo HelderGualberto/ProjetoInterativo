@@ -22,9 +22,7 @@ int men = 0;
 //Define the standard window size
 const static int windowHeight = 288, windowWidth = 352;
 //our sensitivity value to be used in the absdiff() function
-const static int SENSITIVITY_VALUE = 20;
-//size of blur used to smooth the intensity image output from absdiff() function
-const static int BLUR_SIZE = 10;
+
 
 typedef struct thread{
 	bool timeWaited;
@@ -105,21 +103,6 @@ Mat getImagePart(Mat image,Rect partRect){
 		}
 	}
 	return imagePart;
-}
-
-void initFunctions(KalmanFilter KF){
-	KF.statePre.at<float>(0) = 0;
-    KF.statePre.at<float>(1) = 0;
-    KF.statePre.at<float>(2) = 0;
-    KF.statePre.at<float>(3) = 0;
-
-    KF.transitionMatrix = *(Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1); // Including velocity
-    KF.processNoiseCov = *(cv::Mat_<float>(4,4) << 0.2,0,0.2,0,  0,0.2,0,0.2,  0,0,0.3,0,  0,0,0,0.3);
-
-    setIdentity(KF.measurementMatrix);
-    setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
-    setIdentity(KF.measurementNoiseCov, Scalar::all(1e-1));
-    setIdentity(KF.errorCovPost, Scalar::all(.1));
 }
 
 void initRectSize(int x, int y, int width, int height,Rect *rect){
@@ -309,7 +292,6 @@ void peopleCounting(void* arg){
 		vector<Point2f> rightDirection(5);
 		vector<Vec4i> leftHierarchy;
 		vector<Vec4i> rightHierarchy;
-		KalmanFilter KF(4, 2, 0);
 		Rect leftR;
 		Rect rightR;
 		Rect window;
@@ -327,7 +309,6 @@ void peopleCounting(void* arg){
 		int rDx = 0;
 	#pragma endregion 
 	//Init Kalman filter configurations
-	initFunctions(KF);
 
 	// init rect sizes
 	initRectSize(0,0,windowWidth,windowHeight,&window); //Used to search the skins in the window.
@@ -398,14 +379,14 @@ void peopleCounting(void* arg){
 			if(lDx < 0){
 				numberOfPeople++;
 				lFlag = true;
-				printf("Total :%d\n",numberOfPeople);
+				//printf("Total :%d\n",numberOfPeople);
 			}
 		}
 		if(rmc.inside(window) && rFlag == false){
 			if(rDx > 0){
 				numberOfPeople++;
 				rFlag = true;
-				printf("Total :%d\n",numberOfPeople);
+				//printf("Total :%d\n",numberOfPeople);
 
 			}
 		}
@@ -551,7 +532,7 @@ int startProgram(){
 					men++;
 
 				_beginthread(delay,0,(void*)&Wtime);
-				printf("Intrested: %d\n",women+men);
+			//	printf("Intrested: %d\n",women+men);
 			}
 			flag = false;
         }

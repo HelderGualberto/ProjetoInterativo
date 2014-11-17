@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <mysql.h>
 
-//Vieira's Server
+//Vieira's Database
 //172.246.16.27
 //root
 //8963

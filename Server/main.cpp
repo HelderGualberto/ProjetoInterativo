@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 {
   MYSQL *con = mysql_init(NULL);
 
-  FILE * input = fopen("C:\\Users\\Helder\\Documents\\GitHub\\ProjetoInterativo\\peopleMonitoring\\appData.txt","r");
+  /*FILE * input = fopen("C:\\Users\\Helder\\Documents\\GitHub\\ProjetoInterativo\\peopleMonitoring\\appData.txt","r");
 
   int numberOfPeople,intrestedPeople;
   float time;
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   printf("time: %f\n",time);
   printf("start: %s\n",startTime);
   printf("end: %s\n",endTime);
-
+*/
   if (con == NULL)
   {
     fprintf(stderr, "%s\n", mysql_error(con));
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  if (mysql_query(con, "INSERT INTO total_pessoas (numero_pessoas) VALUES('666')"))
+  if (mysql_query(con, "INSERT INTO PeopleData (TotalPeople) VALUES('666')"))
   {
       fprintf(stderr, "%s\n", mysql_error(con));
       mysql_close(con);

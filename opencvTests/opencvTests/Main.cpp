@@ -406,7 +406,7 @@ int main(){
 	return 0;
 }*/
 
-/*
+
 #include <stdio.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/contrib/contrib.hpp>
@@ -459,7 +459,7 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
     }
 }
 
-int chekingGender(float height, float width) {
+int main() {
     int x = 0;
     // Check for valid command line arguments, print usage
     // if no arguments were given.
@@ -560,10 +560,10 @@ int chekingGender(float height, float width) {
     // Holds the current frame from the Video device:
     for(;;) {
 		x++;
-		stringstream ss ;
-		ss << "C:\\opencv\\helder\\helder" <<x<< ".png";
-		string s = ss.str();
-        cap >> frame;
+		//stringstream ss ;
+		//ss << "C:\\opencv\\helder\\helder" <<x<< ".png";
+		//string s = ss.str();
+		frame = imread("C:\\opencv\\m\\amanda.jpg");
         Mat original = frame.clone();
         Mat gray;
         cvtColor(original, gray, CV_BGR2GRAY);
@@ -579,7 +579,7 @@ int chekingGender(float height, float width) {
 			Mat rgb = original(face_i);
 			resize(rgb,rgb,Size(200,200));
 
-			imwrite(s,rgb);
+			//imwrite(s,rgb);
             Mat face_resized;
             cv::resize(face, face_resized, Size(im_width, im_height), 1.0, 1.0, INTER_CUBIC);
 			
@@ -588,23 +588,22 @@ int chekingGender(float height, float width) {
             // And finally write all we've found out to the original image!
             rectangle(original, face_i, CV_RGB(0, 255,0), 1);
             string box_text;
-			printf("%d ",prediction);
             if(prediction == MULHER){
-                box_text = format("Prd - 0");
+                box_text = format("Woman");
 			}
 			else
-				box_text = format("Prd - 1");
+				box_text = format("Man");
 		
 
             // Calculate the position for annotated text (make sure we don't
             // put illegal values in there):
-            int pos_x = std::max(face_i.tl().x - 10, 0);
-            int pos_y = std::max(face_i.tl().y - 10, 0);
+            int pos_x = max(face_i.tl().x + 10, 0);
+            int pos_y = max(face_i.tl().y - 10, 0);
             // And now put it into the image:
             putText(original, box_text, Point(pos_x, pos_y), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(255,255,255), 2.0);
         }
         // Show the result:
-        imshow("Gender Recognizer - Joao Lucas Sisanoski", original);
+        imshow("Gender Recognizer", original);
         
         // And display it:
         char key = (char) waitKey(20);
@@ -616,7 +615,7 @@ int chekingGender(float height, float width) {
     return 0;
 }
 
-*/
+
 #pragma endregion
 
 /*
@@ -681,7 +680,7 @@ int main(){
 
 
 #include <mysql.h>
-
+/*
 using namespace std;
 
 int main(int argc, char **argv)
@@ -693,23 +692,7 @@ int main(int argc, char **argv)
  // int numberOfPeople,intrestedPeople;
  // float time;
  // char startTime[20],endTime[20];
-/*
-  fscanf(input,"%s",startTime);
-  getc(input);
-  fscanf(input,"%d",&numberOfPeople);
-  fscanf(input,"%d",&intrestedPeople);
-  fscanf(input,"%f",&time);
-  fscanf(input,"%s",endTime);
-  getc(input);
 
-  fclose(input);
-
-  printf("Intrested: %d\n",intrestedPeople);
-  printf("total: %d\n",numberOfPeople);
-  printf("time: %f\n",time);
-  printf("start: %s\n",startTime);
-  printf("end: %s\n",endTime);
-  */
   if (con == NULL)
   {
     fprintf(stderr, "%s\n", mysql_error(con));
@@ -737,4 +720,72 @@ int main(int argc, char **argv)
   mysql_close(con);
 
   exit(0);
+}*//*
+#define drawCross( center, color, d )                                 \
+line( img, Point( center.x - d, center.y - d ), Point( center.x + d, center.y + d ), color, 2, CV_AA, 0); \
+line( img, Point( center.x + d, center.y - d ), Point( center.x - d, center.y + d ), color, 2, CV_AA, 0 )
+ 
+using namespace cv;
+using namespace std;
+  
+int main( )
+{ 
+ 
+KalmanFilter KF(4, 2, 0);
+POINT mousePos;
+GetCursorPos(&mousePos);
+ 
+// intialization of KF...
+KF.transitionMatrix = *(Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+Mat_<float> measurement(2,1); measurement.setTo(Scalar(0));
+ 
+KF.statePre.at<float>(0) = mousePos.x;
+KF.statePre.at<float>(1) = mousePos.y;
+KF.statePre.at<float>(2) = 0;
+KF.statePre.at<float>(3) = 0;
+setIdentity(KF.measurementMatrix);
+setIdentity(KF.processNoiseCov, Scalar::all(1e-4));
+setIdentity(KF.measurementNoiseCov, Scalar::all(10));
+setIdentity(KF.errorCovPost, Scalar::all(.1));
+// Image to show mouse tracking
+Mat img(600, 800, CV_8UC3);
+vector<Point> mousev,kalmanv;
+mousev.clear();
+kalmanv.clear();
+ 
+while(1)
+{
+ // First predict, to update the internal statePre variable
+ Mat prediction = KF.predict();
+ Point predictPt(prediction.at<float>(0),prediction.at<float>(1));
+              
+ // Get mouse point
+ GetCursorPos(&mousePos);
+ measurement(0) = mousePos.x;
+ measurement(1) = mousePos.y; 
+  
+ // The update phase 
+ Mat estimated = KF.correct(measurement);
+ 
+ Point statePt(estimated.at<float>(0),estimated.at<float>(1));
+ Point measPt(measurement(0),measurement(1));
+    // plot points
+    imshow("mouse kalman", img);
+    img = Scalar::all(0);
+ 
+    mousev.push_back(measPt);
+    kalmanv.push_back(statePt);
+    drawCross( statePt, Scalar(255,255,255), 5 );
+    drawCross( measPt, Scalar(0,0,255), 5 );
+ 
+    for (int i = 0; i < mousev.size()-1; i++) 
+     line(img, mousev[i], mousev[i+1], Scalar(255,255,0), 1);
+     
+    for (int i = 0; i < kalmanv.size()-1; i++) 
+     line(img, kalmanv[i], kalmanv[i+1], Scalar(0,155,255), 1);
+     
+ waitKey(10);  
 }
+                                           
+    return 0;
+}*/
