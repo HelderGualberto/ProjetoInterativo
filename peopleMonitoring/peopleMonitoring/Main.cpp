@@ -558,7 +558,7 @@ int startProgram(){
 			appData->livedTime += Wtime.workingTime;
 			appData->Women = women;
 			appData->Men = men;
-			appData->SaveData();
+			//appData->SaveData();
 		#pragma endregion;
 
 		}

@@ -416,6 +416,7 @@ int main(){
 #include <iostream>
 #include <fstream>
 #include <sstream>
+/*
 typedef enum{
     MULHER,
     HOMEM,
@@ -617,7 +618,7 @@ int main() {
 
 
 #pragma endregion
-
+*/
 /*
 
 void teste(void* param){
@@ -789,3 +790,32 @@ while(1)
                                            
     return 0;
 }*/
+
+	void change_RGB(Mat* frame){
+		for(int x = 0;x < frame->cols;x++){
+			for(int y= 0;y < frame->rows;y++){
+				frame->at<Vec3b>(y,x)[0] = frame->at<Vec3b>(y,x)[0]+50;
+				frame->at<Vec3b>(y,x)[1] = frame->at<Vec3b>(y,x)[1]+50;
+				frame->at<Vec3b>(y,x)[2] = frame->at<Vec3b>(y,x)[2]+50;
+			}
+		}
+}
+	
+int main (){
+
+	VideoCapture cap;
+	cap.open(0);
+
+	Mat frame;
+	
+	for(;;){
+		cap.read(frame);
+
+		imshow("asdasd",frame);
+		change_RGB(&frame);
+		imshow("Ad",frame);
+		waitKey(12);
+	}
+
+	return 0;	
+}
